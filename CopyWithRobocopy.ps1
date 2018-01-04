@@ -11,9 +11,6 @@
     Source: Source Folder Path
     Target: Target Folder path
 
-    Optionals
-    xo: If you want to deleted the newly created files in destination folder which are not in source folder
-
 .OUTPUTS
    The output
 
