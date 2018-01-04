@@ -88,11 +88,8 @@ function Copy-Recursive{
             #GetandSetACL -OriginalFilePath $dir -TargetFilePath $test
         }
     }
-    END{}
-    
-
-    #get source files
-    
+    END{} 
+    #get source files  
  }
 function Set-DateAttributes{
     [CmdletBinding()]
@@ -118,21 +115,10 @@ function Set-DateAttributes{
             [System.IO.Directory]::SetLastAccessTime($TargetFilePath,$di.LastAccessTime)
         }
     }
-    END{
-        
+    END{       
     }
 }
- Copy-Recursive -sourceDir $source -targetDir $target
 
- <#
-Try{
-	Copy-Item $Source\* $Target -recurse -ErrorAction Stop
-	Write-Host "Coping files from $Source to $Target"
-	Write-Host "Successfully Copied"
-}
-Catch{
-	$ErrorMessage = $_.Exception.Message
-	Write-Host "Error: $ErrorMessage"
-	Break
-}
-#>
+<# Start script #>
+Copy-Recursive -sourceDir $source -targetDir $target
+
