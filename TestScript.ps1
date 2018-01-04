@@ -2,9 +2,10 @@ param(
  [Parameter(Mandatory=$true)][string]$Source,
  [Parameter(Mandatory=$true)][string]$Target
 )
-Write-Host "Source is $Source"
-Write-Host "Destination is $Target"
-
+Write-Host "=============================================="
+Write-Host "You are copying from: $Source"
+Write-Host "You are copying to: $Target"
+Write-Host "=============================================="
 #GLOBALs 
 $global:ScriptLocation = $(get-location).Path
 #$global:DefaultLog = "$global:ScriptLocation\copy.log"
@@ -18,8 +19,8 @@ function Copy-Recursive{
     [CmdletBinding()]
     param(
         [Parameter(Position=0,mandatory=$true)] [string]$sourceDir,
-        [Parameter(Position=1,mandatory=$true)] [string]$targetDir,
-        [Parameter(Position=2,mandatory=$false)] [switch]$NTFS=$false
+        [Parameter(Position=1,mandatory=$true)] [string]$targetDir
+        #[Parameter(Position=2,mandatory=$false)] [switch]$NTFS=$false
     )
     BEGIN{
         [int]$counter=0;
@@ -39,46 +40,45 @@ function Copy-Recursive{
         foreach($file in [System.IO.Directory]::GetFiles($sourceDir) ){
             #generalcounter
             $GLOBAL:Opcount=$GLOBAL:FilesCopied+ $GLOBAL:FilesExisting + 1;
-            $FilePath=[System.IO.Path]::Combine($targetDir, [System.IO.Path]::GetFileName($file))
-            $FileInfoNew = new-object System.IO.FileInfo($file)
-
-            if( ($GLOBAL:Opcount)%$Nfiles -eq 0  ){
-                $IsMultipleOfNFiles = $true
-            }
-            else{
-                $IsMultipleOfNFiles = $false
-            }
+            $TargetFilePath=[System.IO.Path]::Combine($targetDir, [System.IO.Path]::GetFileName($file))
+            $CopyingFileInfo = new-object System.IO.FileInfo($file)
 			
 			<# New Files #>
-            if(![System.IO.File]::Exists($FilePath) ){ #If doesn't exists, add to the copiedfiles copy the file and set attributes
-                [System.IO.File]::Copy($file, $FilePath)
-				Write-Host "Coping files from $Source to $Target"
-                Set-DateAttributes -OriginalFilePath $file -TargetFilePath $FilePath
+            if(![System.IO.File]::Exists($TargetFilePath) ){ #If doesn't exists, add to the copiedfiles copy the file and set attributes
+                [System.IO.File]::Copy($file, $TargetFilePath)
+				Write-Host "Copying files from $Source to $Target"
+				Write-Host "=============================================="
+                Set-DateAttributes -OriginalFilePath $file -TargetFilePath $TargetFilePath
                 $GLOBAL:FilesCopied++
             }
 			
 			<# Modified Files #>
-			elseif ([System.IO.File]::Exists($FilePath)){ #If file exists but source and target file's lengths are not equal 
-				$TargetFileInfo = new-object System.IO.FileInfo($FilePath)
-				if($FileInfoNew.Length -ne $TargetFileInfo.Length){				
-					Write-Host "$file is different in src and target"
-					[System.IO.File]::Copy($file, $FilePath, $TRUE)
-					Write-Host "Coping modified files from $Source to $Target"
-					Set-DateAttributes -OriginalFilePath $file -TargetFilePath $FilePath
+			else{  
+				$TargetFileInfo = new-object System.IO.FileInfo($TargetFilePath)
+				if($CopyingFileInfo.Length -ne $TargetFileInfo.Length){ #If file exists but source and target file's sizes are not equal				
+					Write-Host "File modified: $file"
+					[System.IO.File]::Copy($file, $TargetFilePath, $TRUE)
+					Write-Host "Copying modified files from $Source to $Target"
+					Write-Host "=============================================="
+					Set-DateAttributes -OriginalFilePath $file -TargetFilePath $TargetFilePath
 					$GLOBAL:FilesCopied++
 				}
+				
+				elseif($CopyingFileInfo.LastWriteTime - $TargetFileInfo.LastWriteTime -gt 0 ){ #If file exists but source has been modified later without affecting its size
+					Write-Host "Modified later in src: $file"
+					[System.IO.File]::Copy($file, $TargetFilePath, $TRUE)
+					Write-Host "Copying modified files from $Source to $Target"
+					Write-Host "=============================================="
+					Set-DateAttributes -OriginalFilePath $file -TargetFilePath $TargetFilePath
+					$GLOBAL:FilesCopied++
+				}
+				
+				elseif($CopyingFileInfo.LastWriteTime - $TargetFileInfo.LastWriteTime -lt 0 ){ #If file exists but target file has been modified later without affecting its size
+					Write-Host "Modified later in target: $file"
+					Write-Host "=============================================="
+				}
+				
 			}
-            else{
-			    $FileInfoExisting = new-object System.IO.FileInfo($FilePath)
-			    $FileInfoNew      = new-object System.IO.FileInfo($file)
-                $GLOBAL:FilesExisting++
-                #setattributes
-                Set-DateAttributes -OriginalFilePath $file -TargetFilePath $FilePath
-            }
-
-            if($IsMultipleOfNFiles){
-                #Write-Log -Level Info -Message "Writing ""$FilePath""`tCreatedDirectories:$GLOBAL:TotalDirectories`tCopied:$GLOBAL:FilesCopied`tExisting:$GLOBAL:FilesExisting"
-            }
         }
 
         foreach($dir in [System.IO.Directory]::GetDirectories($sourceDir) ){
@@ -99,12 +99,12 @@ function Set-DateAttributes{
         [Parameter(Mandatory=$false,Position=2,ValueFromPipeline=$true)][switch]$folder
     )
     BEGIN{
-        [int]$logcounter=0
+        #[int]$logcounter=0 # TO log 
     }
     PROCESS{
         if(!($folder)){
-            [System.IO.FileInfo] $fi = New-Object System.IO.FileInfo -ArgumentList $originalFilePAth
-            [System.IO.File]::SetCreationTime($targetFilePath,$fi.CreationTime)
+            [System.IO.FileInfo] $fi = New-Object System.IO.FileInfo -ArgumentList $OriginalFilePAth
+            [System.IO.File]::SetCreationTime($TargetFilePath,$fi.CreationTime)
             [System.IO.File]::SetLastWriteTime($TargetFilePath,$fi.LastWriteTime)
             [System.IO.File]::SetLastAccessTime( $TargetFilePath,$fi.LastAccessTime)
         }
