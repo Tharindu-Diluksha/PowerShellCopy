@@ -9,11 +9,10 @@ Write-Host "=============================================="
 #GLOBALs 
 $global:ScriptLocation = $(get-location).Path
 #$global:DefaultLog = "$global:ScriptLocation\copy.log"
-[int]$GLOBAL:Opcount=0 #variable to count operations with files
 
 [int]$GLOBAL:FilesCopied=0 #variable to determine the files that have been copied
 [int]$GLOBAL:FilesExisting=0   #variable to determine the existing files
-[int]$GLOBAL:TotalDirectories=0  #variable to determine the number of directories created
+[int]$GLOBAL:DirectoriesCreated=0  #variable to determine the number of directories created
 
 function Copy-Recursive{
     [CmdletBinding()]
@@ -31,14 +30,14 @@ function Copy-Recursive{
         if(! [System.IO.Directory]::Exists($targetDir) ){
            [System.IO.Directory]::CreateDirectory($targetDir) | Out-Null
             #add 1 directory to the total
-            $GLOBAL:TotalDirectories++
+            $GLOBAL:DirectoriesCreated++
             #Write-Log -Level Load -Message "Folder ""$targetDir"" created..."
         }
     }
     PROCESS{
+		<# Copy files in a Directory #>
         foreach($file in [System.IO.Directory]::GetFiles($sourceDir) ){
-            #generalcounter
-            $GLOBAL:Opcount=$GLOBAL:FilesCopied+ $GLOBAL:FilesExisting + 1;
+			$GLOBAL:FilesExisting ++
             $targetFilePath=[System.IO.Path]::Combine($targetDir, [System.IO.Path]::GetFileName($file))
             $CopyingFileInfo = new-object System.IO.FileInfo($file)
 			
@@ -76,7 +75,8 @@ function Copy-Recursive{
 				
 			}
         }
-
+		
+		<# Copy directories in a directory #>
         foreach($dir in [System.IO.Directory]::GetDirectories($sourceDir) ){
             $test = [System.IO.Path]::Combine($targetDir, (New-Object -TypeName System.IO.DirectoryInfo -ArgumentList $dir).Name)
             Copy-Recursive -sourceDir $dir -targetDir $test
@@ -88,4 +88,5 @@ function Copy-Recursive{
 
 <# Start script #>
 Copy-Recursive -sourceDir $source -targetDir $target
+Write-Host "Created Directories:$GLOBAL:DirectoriesCreated`t Files Copied:$GLOBAL:FilesCopied`t Files Existing:$GLOBAL:FilesExisting"
 
