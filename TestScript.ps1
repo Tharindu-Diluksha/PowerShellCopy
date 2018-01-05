@@ -35,53 +35,72 @@ function Copy-Recursive{
         }
     }
     PROCESS{
-		<# Copy files in a Directory #>
-        foreach($file in [System.IO.Directory]::GetFiles($sourceDir) ){
-			$GLOBAL:FilesExisting ++
-            $targetFilePath=[System.IO.Path]::Combine($targetDir, [System.IO.Path]::GetFileName($file))
-            $CopyingFileInfo = new-object System.IO.FileInfo($file)
+		Try{
+			$files = [System.IO.Directory]::GetFiles($sourceDir)
+			$directories = [System.IO.Directory]::GetDirectories($sourceDir)
 			
-			<# New Files #>
-            if(![System.IO.File]::Exists($targetFilePath) ){ #If doesn't exists, add to the copiedfiles copy the file and set attributes
-                [System.IO.File]::Copy($file, $targetFilePath)
-				Write-Host "Copying files from $Source to $Target"
-				Write-Host "=============================================="
-                $GLOBAL:FilesCopied++
-            }
-			
-			<# Modified Files #>
-			else{  
-				$TargetFileInfo = new-object System.IO.FileInfo($targetFilePath)
-				if($CopyingFileInfo.Length -ne $TargetFileInfo.Length){ #If file exists but source and target file's sizes are not equal				
-					Write-Host "File modified: $file"
-					[System.IO.File]::Copy($file, $targetFilePath, $TRUE)
-					Write-Host "Copying modified files from $Source to $Target"
+			<# Copy files in a Directory #>
+			foreach($file in $files ){
+				$GLOBAL:FilesExisting ++
+				$targetFilePath=[System.IO.Path]::Combine($targetDir, [System.IO.Path]::GetFileName($file))
+				$CopyingFileInfo = new-object System.IO.FileInfo($file)
+				
+				<# New Files #>
+				if(![System.IO.File]::Exists($targetFilePath) ){ #If doesn't exists, add to the copiedfiles copy the file and set attributes
+					[System.IO.File]::Copy($file, $targetFilePath)
+					Write-Host "Copying files from $Source to $Target"
 					Write-Host "=============================================="
 					$GLOBAL:FilesCopied++
 				}
 				
-				elseif($CopyingFileInfo.LastWriteTime - $TargetFileInfo.LastWriteTime -gt 0 ){ #If file exists but source has been modified later without affecting its size
-					Write-Host "Modified later in src: $file"
-					[System.IO.File]::Copy($file, $targetFilePath, $TRUE)
-					Write-Host "Copying modified files from $Source to $Target"
-					Write-Host "=============================================="
-					$GLOBAL:FilesCopied++
+				<# Modified Files #>
+				else{  
+					$TargetFileInfo = new-object System.IO.FileInfo($targetFilePath)
+					if($CopyingFileInfo.Length -ne $TargetFileInfo.Length){ #If file exists but source and target file's sizes are not equal				
+						Write-Host "File modified: $file"
+						[System.IO.File]::Copy($file, $targetFilePath, $TRUE)
+						Write-Host "Copying modified files from $Source to $Target"
+						Write-Host "=============================================="
+						$GLOBAL:FilesCopied++
+					}
+					
+					elseif($CopyingFileInfo.LastWriteTime - $TargetFileInfo.LastWriteTime -gt 0 ){ #If file exists but source has been modified later without affecting its size
+						Write-Host "Modified later in src: $file"
+						[System.IO.File]::Copy($file, $targetFilePath, $TRUE)
+						Write-Host "Copying modified files from $Source to $Target"
+						Write-Host "=============================================="
+						$GLOBAL:FilesCopied++
+					}
+					
+					elseif($CopyingFileInfo.LastWriteTime - $TargetFileInfo.LastWriteTime -lt 0 ){ #If file exists but target file has been modified later without affecting its size
+						Write-Host "Modified later in target: $file"
+						Write-Host "=============================================="
+					}
+					
 				}
-				
-				elseif($CopyingFileInfo.LastWriteTime - $TargetFileInfo.LastWriteTime -lt 0 ){ #If file exists but target file has been modified later without affecting its size
-					Write-Host "Modified later in target: $file"
-					Write-Host "=============================================="
-				}
-				
 			}
-        }
+			
+			<# Copy directories in a directory #>
+			foreach($dir in $directories ){
+				$test = [System.IO.Path]::Combine($targetDir, (New-Object -TypeName System.IO.DirectoryInfo -ArgumentList $dir).Name)
+				Copy-Recursive -sourceDir $dir -targetDir $test
+				#GetandSetACL -originalFilePath $dir -targetFilePath $test
+			}
+		}
 		
-		<# Copy directories in a directory #>
-        foreach($dir in [System.IO.Directory]::GetDirectories($sourceDir) ){
-            $test = [System.IO.Path]::Combine($targetDir, (New-Object -TypeName System.IO.DirectoryInfo -ArgumentList $dir).Name)
-            Copy-Recursive -sourceDir $dir -targetDir $test
-            #GetandSetACL -originalFilePath $dir -targetFilePath $test
-        }
+		Catch{
+			$ErrorMessage = $_.Exception.Message
+			$FailedItem = $_.Exception.ItemName
+			Write-Host "=============================================="
+			Write-Host "$ErrorMessage"
+			Write-Host "=============================================="
+			Write-Host "$FailedItem"
+			Break
+		}
+		
+		Finally{
+		}
+		
     }
     END{}   
  }
