@@ -47,8 +47,8 @@ function Copy-Recursive{
 				
 				<# New Files #>
 				if(![System.IO.File]::Exists($targetFilePath) ){ #If doesn't exists, add to the copiedfiles copy the file and set attributes
-					[System.IO.File]::Copy($file, $targetFilePath)
 					Write-Host "Copying files from $Source to $Target"
+					[System.IO.File]::Copy($file, $targetFilePath)
 					Write-Host "=============================================="
 					$GLOBAL:FilesCopied++
 				}
@@ -58,16 +58,16 @@ function Copy-Recursive{
 					$TargetFileInfo = new-object System.IO.FileInfo($targetFilePath)
 					if($CopyingFileInfo.Length -ne $TargetFileInfo.Length){ #If file exists but source and target file's sizes are not equal				
 						Write-Host "File modified: $file"
-						[System.IO.File]::Copy($file, $targetFilePath, $TRUE)
 						Write-Host "Copying modified files from $Source to $Target"
+						[System.IO.File]::Copy($file, $targetFilePath, $TRUE)
 						Write-Host "=============================================="
 						$GLOBAL:FilesCopied++
 					}
 					
 					elseif($CopyingFileInfo.LastWriteTime -gt $TargetFileInfo.LastWriteTime ){ #If file exists but source has been modified later without affecting its size
 						Write-Host "Modified later in src: $file"
-						[System.IO.File]::Copy($file, $targetFilePath, $TRUE)
 						Write-Host "Copying modified files from $Source to $Target"
+						[System.IO.File]::Copy($file, $targetFilePath, $TRUE)
 						Write-Host "=============================================="
 						$GLOBAL:FilesCopied++
 					}
