@@ -19,13 +19,10 @@ function Copy-Recursive{
     param(
         [Parameter(Position=0,mandatory=$true)] [string]$sourceDir,
         [Parameter(Position=1,mandatory=$true)] [string]$targetDir
-        #[Parameter(Position=2,mandatory=$false)] [switch]$NTFS=$false
     )
     BEGIN{
         [int]$counter=0;
         [int]$LogCounter=0;
-        [bool]$IsMultipleOfNFiles=$false
-		[int]$Nfiles = 10;
 
         if(! [System.IO.Directory]::Exists($targetDir) ){
            [System.IO.Directory]::CreateDirectory($targetDir) | Out-Null
