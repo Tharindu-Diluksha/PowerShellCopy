@@ -3,8 +3,8 @@ param(
  [Parameter(Mandatory=$true)][string]$Target
 )
 Write-Host "=============================================="
-Write-Host "You are copying from: $Source"
-Write-Host "You are copying to: $Target"
+Write-Host "Copying from: $Source"
+Write-Host "Copying to: $Target"
 Write-Host "=============================================="
 #GLOBALs 
 $global:ScriptLocation = $(get-location).Path
@@ -64,7 +64,7 @@ function Copy-Recursive{
 						$GLOBAL:FilesCopied++
 					}
 					
-					elseif($CopyingFileInfo.LastWriteTime - $TargetFileInfo.LastWriteTime -gt 0 ){ #If file exists but source has been modified later without affecting its size
+					elseif($CopyingFileInfo.LastWriteTime -gt $TargetFileInfo.LastWriteTime ){ #If file exists but source has been modified later without affecting its size
 						Write-Host "Modified later in src: $file"
 						[System.IO.File]::Copy($file, $targetFilePath, $TRUE)
 						Write-Host "Copying modified files from $Source to $Target"
@@ -72,7 +72,7 @@ function Copy-Recursive{
 						$GLOBAL:FilesCopied++
 					}
 					
-					elseif($CopyingFileInfo.LastWriteTime - $TargetFileInfo.LastWriteTime -lt 0 ){ #If file exists but target file has been modified later without affecting its size
+					elseif($CopyingFileInfo.LastWriteTime -lt $TargetFileInfo.LastWriteTime ){ #If file exists but target file has been modified later without affecting its size
 						Write-Host "Modified later in target: $file"
 						Write-Host "=============================================="
 					}
